@@ -28,11 +28,28 @@ TARGET_BOOTLOADER_BOARD_NAME := 825X_Pro
 TARGET_NO_BOOTLOADER := true
 
 # Display
-# The panel is 720x1280 (tpd-resolution in the recovery DTBO), rotated to
-# landscape by the vendor boot animation / surfaceflinger orientation.
+# The live mtkfb framebuffer reports 1024x768 (fb0/modes), not the panel's
+# 720x1280 touch resolution in the DTBO. Match the framebuffer so TWRP picks
+# the landscape_mdpi theme.
 TARGET_SCREEN_DENSITY := 240
-TARGET_SCREEN_WIDTH := 1280
-TARGET_SCREEN_HEIGHT := 720
+TARGET_SCREEN_WIDTH := 1024
+TARGET_SCREEN_HEIGHT := 768
+
+# The panel is physically rotated 90 relative to the framebuffer. TWRP 90
+# makes the UI upright; touch coordinates must be transposed to match.
+TW_ROTATION := 90
+
+# Use TWRP's built-in transpose instead of a patch to minuitwrp. The
+# /sbin/touch_abs init service adjusts the evdev abs range so TWRP's generic
+# scaling produces the right coordinates for this panel.
+RECOVERY_TOUCHSCREEN_SWAP_XY := true
+
+# mtkfb treats FBIOBLANK as early-suspend and powers the LCD off. That also
+# suspends mtk-tpd, whose resume workqueue fails to cancel ("cancel
+# resume_workqueue failed") and leaves the touchscreen dead. Disable both
+# the blank timer and the blanking itself.
+TW_NO_SCREEN_TIMEOUT := true
+TW_NO_SCREEN_BLANK := true
 
 # Kernel
 BOARD_BOOT_HEADER_VERSION := 1
@@ -78,7 +95,19 @@ TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
 # Filesystem tools (required for PRODUCT_SHIPPING_API_LEVEL >= 27)
 TARGET_USES_MKE2FS := true
 
+# adbd execs /sbin/sh with a lone "-" for interactive shells. The recovery
+# ramdisk inherited a stale `sh -> recovery` symlink from an earlier build, so
+# TWRP tried to open a file literally named "-" ("Problem opening - ...").
+# Install the real mksh into recovery as /sbin/sh instead.
+TWRP_REQUIRED_MODULES += sh
+
 # Recovery
+# mtkfb exposes a 1024x2304 virtual framebuffer (3 x 768). Double buffering
+# plus an explicit FBIOPAN_DISPLAY is required to make the panel scan out the
+# buffer TWRP actually draws into; without it the screen stays on whatever
+# buffer the bootloader left active.
+TW_FBIOPAN := true
+
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.ac8257
 BOARD_INCLUDE_RECOVERY_DTBO := true
 TARGET_USERIMAGES_USE_EXT4 := true

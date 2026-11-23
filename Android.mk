@@ -13,6 +13,23 @@ _825X_PATH := $(LOCAL_PATH)
 include $(call all-subdir-makefiles,$(LOCAL_PATH))
 
 # ---------------------------------------------------------------------------
+# Fix /sbin/sh in the recovery ramdisk.
+#
+# TWRP ships a stale `sh -> recovery` symlink. /sbin/permissive.sh uses
+# `#!/sbin/sh`, so invoking it starts another full TWRP instance, which runs
+# permissive.sh again -> recursive fork loop (dozens of `sh` processes), the
+# framebuffer is cleared on every respawn and the screen stays black.
+# Point sh at the real bash binary TWRP already ships instead.
+# ---------------------------------------------------------------------------
+_825X_RECOVERY_SH := $(TARGET_RECOVERY_ROOT_OUT)/sbin/sh
+$(_825X_RECOVERY_SH): $(TARGET_RECOVERY_ROOT_OUT)/sbin/bash
+	@echo "----- Fixing recovery /sbin/sh -> bash -----"
+	$(hide) rm -f $@
+	$(hide) ln -sf bash $@
+
+$(PRODUCT_OUT)/recovery.img: $(_825X_RECOVERY_SH)
+
+# ---------------------------------------------------------------------------
 # Flashable recovery image (OEM vbmeta)
 #
 # This device's LK only boots a recovery that carries an OEM-signed AVB

@@ -14,6 +14,13 @@ PRODUCT_ENFORCE_RRO_TARGETS := *
 # Recovery adb must be always-allowed (no confirmation UI in recovery)
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.adb.secure=0
 
+# adbd execs /sbin/sh with a lone "-" for interactive shells. Our recovery
+# ramdisk has a stale `sh -> recovery` symlink, which makes the recovery
+# binary try to open a file literally named "-" and print
+# "Problem opening - for reading!". Point adbd at the real bash binary that
+# TWRP ships in /sbin instead.
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += persist.sys.adb.shell=/sbin/bash
+
 # Product characteristics
 PRODUCT_CHARACTERISTICS := default
 
@@ -36,6 +43,7 @@ PRODUCT_PACKAGES += \
     meta_init.rc \
     multi_init.rc \
     init.recovery.ac8257.rc \
+    touch_abs \
 
 # Soong namespaces
 PRODUCT_SOONG_NAMESPACES += \
