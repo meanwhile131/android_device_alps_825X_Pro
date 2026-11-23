@@ -28,7 +28,11 @@ TARGET_BOOTLOADER_BOARD_NAME := 825X_Pro
 TARGET_NO_BOOTLOADER := true
 
 # Display
+# The panel is 720x1280 (tpd-resolution in the recovery DTBO), rotated to
+# landscape by the vendor boot animation / surfaceflinger orientation.
 TARGET_SCREEN_DENSITY := 240
+TARGET_SCREEN_WIDTH := 1280
+TARGET_SCREEN_HEIGHT := 720
 
 # Kernel
 BOARD_BOOT_HEADER_VERSION := 1
@@ -70,6 +74,9 @@ TARGET_BOARD_PLATFORM := ac8257
 # Properties
 TARGET_SYSTEM_PROP += $(DEVICE_PATH)/system.prop
 TARGET_VENDOR_PROP += $(DEVICE_PATH)/vendor.prop
+
+# Filesystem tools (required for PRODUCT_SHIPPING_API_LEVEL >= 27)
+TARGET_USES_MKE2FS := true
 
 # Recovery
 TARGET_RECOVERY_FSTAB := $(DEVICE_PATH)/rootdir/etc/fstab.ac8257

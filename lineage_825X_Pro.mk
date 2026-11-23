@@ -13,8 +13,8 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 # Inherit from 825X_Pro device
 $(call inherit-product, device/alps/825X_Pro/device.mk)
 
-# Inherit some common Lineage stuff.
-$(call inherit-product, vendor/lineage/config/common_full_phone.mk)
+# Inherit common TWRP/Omni stuff.
+$(call inherit-product, vendor/omni/config/common.mk)
 
 PRODUCT_DEVICE := 825X_Pro
 PRODUCT_NAME := lineage_825X_Pro
