@@ -13,15 +13,12 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 # Inherit from 825X_Pro device
 $(call inherit-product, device/alps/825X_Pro/device.mk)
 
-# Inherit common TWRP/Omni stuff.
-$(call inherit-product, vendor/omni/config/common.mk)
-
-# Omni enables adb authentication for every non-eng build. `ro.` properties
-# are write-once, so the later ro.adb.secure=0 from device.mk is silently
-# ignored and recovery adb still asks for authorization — impossible to
-# approve with a broken/absent screen. Drop the "=1" at the source.
-PRODUCT_SYSTEM_DEFAULT_PROPERTIES := $(filter-out ro.adb.secure=%,$(PRODUCT_SYSTEM_DEFAULT_PROPERTIES))
-PRODUCT_SYSTEM_DEFAULT_PROPERTIES += ro.adb.secure=0
+# TWRP is selected in BoardConfig.mk (RECOVERY_VARIANT := twrp); the product
+# does not need vendor/omni/config/common.mk. Keep the client id property that
+# the omni config used to derive from PRODUCT_GMS_CLIENTID_BASE.
+PRODUCT_SYSTEM_DEFAULT_PROPERTIES += \
+    ro.com.google.clientidbase=android-alps \
+    ro.adb.secure=0
 
 PRODUCT_DEVICE := 825X_Pro
 PRODUCT_NAME := lineage_825X_Pro

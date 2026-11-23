@@ -102,6 +102,9 @@ TARGET_USES_MKE2FS := true
 TWRP_REQUIRED_MODULES += sh
 
 # Recovery
+# TWRP is checked out at bootable/recovery (see the local manifest).
+RECOVERY_VARIANT := twrp
+
 # mtkfb exposes a 1024x2304 virtual framebuffer (3 x 768). Double buffering
 # plus an explicit FBIOPAN_DISPLAY is required to make the panel scan out the
 # buffer TWRP actually draws into; without it the screen stays on whatever
