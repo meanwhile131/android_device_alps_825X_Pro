@@ -49,6 +49,7 @@ PRODUCT_PACKAGES += \
     factory_init.rc \
     init.ac8257.rc \
     init.ac8257.usb.rc \
+    init.825x_supplicant.rc \
     init.aee.rc \
     init.ago.rc \
     init.connectivity.rc \
@@ -76,4 +77,6 @@ $(call inherit-product, vendor/alps/825X_Pro/825X_Pro-vendor.mk)
 # Stock vendor properties. TARGET_VENDOR_PROP is obsolete in this build
 # system; with BOARD_PROPERTY_OVERRIDES_SPLIT_ENABLED=true these land in
 # vendor/build.prop. ro.vendor.wlan.gen selects the Wi-Fi kernel module.
-PRODUCT_PROPERTY_OVERRIDES += ro.vendor.wlan.gen=gen4m
+PRODUCT_PROPERTY_OVERRIDES += \
+    ro.vendor.wlan.gen=gen4m \
+    ro.lockscreen.disable.default=true
