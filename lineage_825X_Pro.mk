@@ -9,9 +9,18 @@ WITH_ADB_INSECURE := true
 # Inherit from those products. Most specific first.
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
+# LineageOS common config (Lineage SDK packages, permissions, audio, etc.)
+$(call inherit-product, vendor/lineage/config/common.mk)
 
 # Inherit from 825X_Pro device
 $(call inherit-product, device/alps/825X_Pro/device.mk)
+
+# Use the standard LineageOS launcher (Trebuchet) instead of the crashing
+# "Home Sample" app pulled in by core_base.mk.  The AOSP CarLauncher needs
+# android.car at runtime and crashes on this non-automotive build, so it is
+# not shipped.
+PRODUCT_PACKAGES += TrebuchetQuickStep
+PRODUCT_PACKAGES := $(filter-out Home,$(PRODUCT_PACKAGES))
 
 # TWRP is selected in BoardConfig.mk (RECOVERY_VARIANT := twrp); the product
 # does not need vendor/omni/config/common.mk. Keep the client id property that

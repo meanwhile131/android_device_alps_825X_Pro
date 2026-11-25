@@ -2,7 +2,10 @@
 ro.audio.silent=0
 
 # Display
+# The panel is physically rotated 90 degrees relative to the framebuffer.
 ro.opengles.version=196610
+ro.sf.hwrotation=90
+persist.sf.hwrotation=90
 
 # Wi-Fi
 ro.wifi.channels=

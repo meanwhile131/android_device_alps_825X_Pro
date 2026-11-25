@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  825X_Pro: the panel is physically rotated 90 degrees relative to the
+  framebuffer (see BoardConfig.mk).  ro.sf.hwrotation=90 handles drawing, but
+  Settings.System.USER_ROTATION must match or input/UI orientation is wrong.
+  Stock ships this as 0; make the correct value the factory default.
+-->
+<resources>
+    <!-- Car head unit: no lockscreen by default. -->
+    <bool name="def_lockscreen_disabled">true</bool>
+</resources>

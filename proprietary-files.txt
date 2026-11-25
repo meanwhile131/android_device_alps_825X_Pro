@@ -1,5 +1,28 @@
 # Unpinned blobs from full_825X_Pro-userdebug 9 PPR1.180610.011 eng.root.20200426.093427 test-keys
 
+# Stock vendor SELinux blobs. Installed by device/alps/825X_Pro/Android.mk
+# (not via PRODUCT_COPY_FILES) because the build generates files at the same
+# paths; they carry the HAL domains our platform policy does not define.
+# (installed by Android.mk) vendor/etc/selinux/vendor_file_contexts
+# (installed by Android.mk) vendor/etc/selinux/vendor_sepolicy.cil
+# (installed by Android.mk) vendor/etc/selinux/vendor_property_contexts
+# (installed by Android.mk) vendor/etc/selinux/vendor_hwservice_contexts
+# (installed by Android.mk) vendor/etc/selinux/vendor_seapp_contexts
+# (installed by Android.mk) vendor/etc/selinux/vndservice_contexts
+# (installed by Android.mk) vendor/etc/selinux/vendor_mac_permissions.xml
+# (installed by Android.mk) vendor/etc/selinux/precompiled_sepolicy
+# (installed by Android.mk) vendor/etc/selinux/precompiled_sepolicy.plat_and_mapping.sha256
+# (installed by Android.mk) vendor/etc/selinux/plat_pub_versioned.cil
+# (installed by Android.mk) vendor/etc/selinux/plat_sepolicy_vers.txt
+
+# Debloat: the stock priv-app APKs are not shipped in LineageOS, so their
+# native libs are orphaned. Factory test images/sounds are unused too.
+# Keep the lines commented for provenance; do not re-add them.
+
+# Front-panel MCU keys: the stock library that talks to the MCU over UART.
+# Stock installs it in /system/lib, so keep it there (vendor.img stays stock).
+lib/libts59xhw.so
+
 # Audio
 lib/vndk-28/android.hardware.audio.common-util.so
 lib/vndk-28/android.hardware.audio.common@2.0-util.so
@@ -1179,55 +1202,102 @@ vendor/odm/etc/vintf/manifest_dsds
 vendor/odm/etc/vintf/manifest_qsqs
 vendor/odm/etc/vintf/manifest_ss
 vendor/odm/etc/vintf/manifest_tsts
-vendor/priv-app/Chrome/lib/arm/crazy.libchrome.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1847.114.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1916.122.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1916.138.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1916.141.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1985.122.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1985.128.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1985.131.so
-vendor/priv-app/Chrome/lib/arm/libchrome.1985.135.so
-vendor/priv-app/Chrome/lib/arm/libchrome.2062.117.so
-vendor/priv-app/Chrome/lib/arm/libchrome.2125.102.so
-vendor/priv-app/Chrome/lib/arm/libchrome.2125.114.so
-vendor/priv-app/Chrome/lib/arm/libchrome.2171.37.so
-vendor/priv-app/Chrome/lib/arm/libchrome.2171.59.so
-vendor/priv-app/Chrome/lib/arm/libchromeview.so
-vendor/priv-app/Chrome/lib/arm/libchromium_android_linker.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/crazy.libchrome.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1847.114.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1916.122.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1916.138.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1916.141.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1985.122.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1985.128.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1985.131.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.1985.135.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.2062.117.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.2125.102.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.2125.114.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.2171.37.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchrome.2171.59.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchromeview.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Chrome/lib/arm/libchromium_android_linker.so
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/Chrome/com.android.chrome_316309801.apk
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/DvdBox/DvdBox.apk
-vendor/priv-app/ES_sign/lib/arm/libmyaes.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/ES_sign/lib/arm/libmyaes.so
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/ES_sign/ES_sign.apk
-vendor/priv-app/EasyConnected/lib/arm/libECSDK.so
-vendor/priv-app/EasyConnected/lib/arm/libecgl2jni.so
-vendor/priv-app/EasyConnected/lib/arm/libecgl2jni_vfpv3.so
-vendor/priv-app/EasyConnected/lib/arm/libmDNSEmbedded.so
-vendor/priv-app/EasyConnected/lib/arm/libmediaserver.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/EasyConnected/lib/arm/libECSDK.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/EasyConnected/lib/arm/libecgl2jni.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/EasyConnected/lib/arm/libecgl2jni_vfpv3.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/EasyConnected/lib/arm/libmDNSEmbedded.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/EasyConnected/lib/arm/libmediaserver.so
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/EasyConnected/EasyConnect.TS05.6.1.5-f98b00e9-201912201035.rele.apk
-vendor/priv-app/Google-Maps/lib/arm/libcronet.so
-vendor/priv-app/Google-Maps/lib/arm/libgmm-jni.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Google-Maps/lib/arm/libcronet.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/Google-Maps/lib/arm/libgmm-jni.so
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/Google-Maps/Google-Maps.apk
-vendor/priv-app/SRV_Upgrade/lib/arm/libSUNODDTOOL.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/SRV_Upgrade/lib/arm/libSUNODDTOOL.so
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/SRV_Upgrade/SRV_Upgrade.apk
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/Specision/Specision.apk
-vendor/priv-app/youtube/lib/arm/libcronet.62.0.3202.13.so
-vendor/priv-app/youtube/lib/arm/libdrishti_jni_native.so
-vendor/priv-app/youtube/lib/arm/libfilterframework_jni.so
-vendor/priv-app/youtube/lib/arm/libgvr.so
-vendor/priv-app/youtube/lib/arm/libgvr_audio.so
-vendor/priv-app/youtube/lib/arm/libluajit.so
-vendor/priv-app/youtube/lib/arm/libmoxie.so
-vendor/priv-app/youtube/lib/arm/libvpx.so
-vendor/priv-app/youtube/lib/arm/libvpxJNI.so
-vendor/priv-app/youtube/lib/arm/libwebp_android.so
-vendor/priv-app/youtube/lib/arm/libyoga.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libcronet.62.0.3202.13.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libdrishti_jni_native.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libfilterframework_jni.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libgvr.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libgvr_audio.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libluajit.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libmoxie.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libvpx.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libvpxJNI.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libwebp_android.so
+# (removed for LineageOS: stock app asset not shipped) vendor/priv-app/youtube/lib/arm/libyoga.so
 # (removed for LineageOS: prebuilt APK, use BUILD_PREBUILT) vendor/priv-app/youtube/youtube.apk
-vendor/res/images/lcd_test_00.png
-vendor/res/images/lcd_test_01.png
-vendor/res/images/lcd_test_02.png
-vendor/res/sound/CA2CA.ogg
-vendor/res/sound/CADetected.ogg
-vendor/res/sound/ringtone.wav
-vendor/res/sound/testpattern1.wav
+# (removed for LineageOS: stock app asset not shipped) vendor/res/images/lcd_test_00.png
+# (removed for LineageOS: stock app asset not shipped) vendor/res/images/lcd_test_01.png
+# (removed for LineageOS: stock app asset not shipped) vendor/res/images/lcd_test_02.png
+# (removed for LineageOS: stock app asset not shipped) vendor/res/sound/CA2CA.ogg
+# (removed for LineageOS: stock app asset not shipped) vendor/res/sound/CADetected.ogg
+# (removed for LineageOS: stock app asset not shipped) vendor/res/sound/ringtone.wav
+# (removed for LineageOS: stock app asset not shipped) vendor/res/sound/testpattern1.wav
+
+# Boot-critical stock blobs that the generic build does not generate:
+# kernel modules, MediaTek HAL implementations and feature permissions.
+vendorlib/modules/bt_drv.ko
+vendorlib/modules/fmradio_drv.ko
+vendorlib/modules/fpsgo.ko
+vendorlib/modules/gps_drv.ko
+vendorlib/modules/met.ko
+vendorlib/modules/wlan_drv_gen4m.ko
+vendorlib/modules/wmt_chrdev_wifi.ko
+vendorlib/modules/wmt_drv.ko
+vendorlib/hw/android.hardware.audio@4.0-impl-mediatek.so
+vendorlib/hw/android.hardware.light@2.0-impl-mediatek.so
+vendorlib64/hw/android.hardware.audio@4.0-impl-mediatek.so
+vendorlib64/hw/android.hardware.bluetooth@1.0-impl-mediatek.so
+vendorlib64/hw/android.hardware.camera.provider@2.4-impl-mediatek.so
+vendorlib64/hw/android.hardware.light@2.0-impl-mediatek.so
+vendorlib/libdrm.so
+vendorlib/libpixelflinger.so
+vendorlib/libtinycompress.so
+vendorlib64/libdrm.so
+vendorlib64/libpixelflinger.so
+vendorlib64/libtinycompress.so
+vendoretc/permissions/android.hardware.bluetooth.xml
+vendoretc/permissions/android.hardware.sensor.light.xml
+vendoretc/permissions/android.hardware.sensor.proximity.xml
+vendoretc/permissions/android.hardware.sensor.compass.xml
+vendoretc/permissions/android.software.midi.xml
+vendoretc/permissions/android.software.verified_boot.xml
+vendoretc/permissions/android.hardware.telephony.gsm.xml
+vendoretc/permissions/android.hardware.touchscreen.xml
+vendoretc/permissions/android.hardware.location.gps.xml
+vendoretc/permissions/handheld_core_hardware.xml
+vendoretc/permissions/android.hardware.camera.xml
+vendoretc/permissions/pms_sysapp_removable_vendor_list.txt
+vendoretc/permissions/android.hardware.wifi.direct.xml
+vendoretc/permissions/android.hardware.wifi.xml
+vendoretc/permissions/android.hardware.audio.low_latency.xml
+vendoretc/permissions/android.hardware.opengles.aep.xml
+vendoretc/permissions/android.hardware.usb.accessory.xml
+vendoretc/permissions/android.hardware.sensor.stepcounter.xml
+vendoretc/permissions/android.hardware.sensor.barometer.xml
+vendoretc/permissions/android.software.live_wallpaper.xml
+vendoretc/permissions/android.hardware.bluetooth_le.xml
+vendoretc/permissions/android.hardware.sensor.stepdetector.xml
+vendoretc/permissions/android.hardware.sensor.accelerometer.xml
+
 vendor/ueventd.rc

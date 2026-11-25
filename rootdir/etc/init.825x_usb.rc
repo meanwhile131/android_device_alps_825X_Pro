@@ -1,0 +1,8 @@
+# Default to USB device mode ("This device") so adb works at every boot.
+# This file is installed to /system/etc/init/ so it is not hidden when the
+# device's separate vendor partition is mounted over /vendor.
+# Android Settings calls DATA_ROLE_DEVICE "This device" and DATA_ROLE_HOST
+# "Connected device"; the sysfs value maps directly (device -> device mode).
+on boot
+    write /sys/class/dual_role_usb/dual-role-usb20/data_role device
+    setprop persist.sys.usb.config adb

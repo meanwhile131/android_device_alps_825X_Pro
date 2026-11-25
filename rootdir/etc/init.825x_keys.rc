@@ -1,0 +1,9 @@
+# The stock MainUI (which drained the MCU key queue) is not part of LineageOS.
+# mcu_keys takes over that job and publishes the front-panel buttons as a
+# standard uinput keyboard.
+service mcu_keys /system/bin/mcu_keys
+    class main
+    user root
+    group root input
+    seclabel u:r:mcu_keys:s0
+    writepid /dev/cpuset/system-background/tasks

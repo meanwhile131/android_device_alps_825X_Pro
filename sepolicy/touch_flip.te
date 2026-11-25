@@ -1,0 +1,11 @@
+type touch_flip, domain, coredomain;
+type touch_flip_exec, exec_type, file_type;
+
+init_daemon_domain(touch_flip)
+
+# permissive for now: only this helper runs, denials are logged but allowed.
+permissive touch_flip;
+
+allow touch_flip input_device:dir r_dir_perms;
+allow touch_flip input_device:chr_file rw_file_perms;
+allow touch_flip uhid_device:chr_file rw_file_perms;

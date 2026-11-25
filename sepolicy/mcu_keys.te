@@ -1,0 +1,14 @@
+# Front-panel MCU key daemon.  Installed in /system like the stock binary
+# that used to drain the MCU key queue.
+type mcu_keys, domain, coredomain;
+type mcu_keys_exec, exec_type, file_type;
+
+init_daemon_domain(mcu_keys)
+
+# Keep permissive while the exact vendor-library accesses are being observed.
+permissive mcu_keys;
+
+allow mcu_keys input_device:dir r_dir_perms;
+allow mcu_keys input_device:chr_file rw_file_perms;
+allow mcu_keys uhid_device:chr_file rw_file_perms;
+allow mcu_keys serial_device:chr_file rw_file_perms;

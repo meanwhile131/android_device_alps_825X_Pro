@@ -28,6 +28,11 @@ TARGET_BOOTLOADER_BOARD_NAME := 825X_Pro
 TARGET_NO_BOOTLOADER := true
 
 # Display
+# The LCD is physically mounted 90 degrees relative to the framebuffer.
+# Report this as the natural display orientation so SurfaceFlinger rotates the
+# composition and WindowManager's default rotation is already correct.
+SF_PRIMARY_DISPLAY_ORIENTATION := 90
+
 # The live mtkfb framebuffer reports 1024x768 (fb0/modes), not the panel's
 # 720x1280 touch resolution in the DTBO. Match the framebuffer so TWRP picks
 # the landscape_mdpi theme.
@@ -54,7 +59,10 @@ TW_NO_SCREEN_BLANK := true
 # Kernel
 BOARD_BOOT_HEADER_VERSION := 1
 BOARD_KERNEL_BASE := 0x40078000
-BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2 buildvariant=userdebug
+# buildvariant=$(TARGET_BUILD_VARIANT) is appended by build/make/core/Makefile
+# veritymode=disabled: our system.img has no AVB hashtree (sparse image), so
+# first-stage init must not try to set up dm-verity on it.
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2 androidboot.veritymode=disabled
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
 # Load addresses must match stock: the decompressed kernel is ~27 MB and would
@@ -79,11 +87,24 @@ BOARD_KERNEL_SEPARATED_DTBO :=
 endif
 
 # Partitions
+# Vendor must be a separate partition: stock has /system/vendor -> /vendor and
+# all vendor blobs live in the vendor partition. Keeping them inside system.img
+# makes the linker load duplicates from /system/vendor in the wrong namespace.
+TARGET_COPY_OUT_VENDOR := vendor
+BOARD_VENDORIMAGE_FILE_SYSTEM_TYPE := ext4
+BOARD_VENDORIMAGE_PARTITION_SIZE := 1056714752
 BOARD_BUILD_SYSTEM_ROOT_IMAGE := true
 BOARD_FLASH_BLOCK_SIZE := 131072 # (BOARD_KERNEL_PAGESIZE * 64)
 BOARD_BOOTIMAGE_PARTITION_SIZE := 10485760
 BOARD_DTBOIMG_PARTITION_SIZE := 8388608
 BOARD_RECOVERYIMAGE_PARTITION_SIZE := 33554432
+# Stock system partition is 2 GiB, but its ext4 content ends at 2113515520;
+# the remainder holds the AVB hashtree, vbmeta and footer. Build the fs at that
+# size, then make_flashable_system.py appends the stock AVB tail to reach 2 GiB.
+BOARD_SYSTEMIMAGE_PARTITION_SIZE := 2113515520
+# Stock cache partition from /data/825x_pro/cache.bin (432 MiB). Needed by
+# block-based OTA generation for transfer sizing.
+BOARD_CACHEIMAGE_PARTITION_SIZE := 452984832
 
 # Platform
 TARGET_BOARD_PLATFORM := ac8257
@@ -129,6 +150,10 @@ BOARD_AVB_RECOVERY_KEY_PATH := external/avb/test/data/testkey_rsa4096.pem
 BOARD_AVB_RECOVERY_ALGORITHM := SHA256_RSA4096
 BOARD_AVB_RECOVERY_ROLLBACK_INDEX := 1
 BOARD_AVB_RECOVERY_ROLLBACK_INDEX_LOCATION := 1
+
+# SELinux: label /file_contexts.bin in the system_root_image
+BOARD_PLAT_PRIVATE_SEPOLICY_DIR += $(DEVICE_PATH)/sepolicy
+BOARD_VENDOR_SEPOLICY_DIRS += $(DEVICE_PATH)/sepolicy/vendor
 
 # VINTF
 DEVICE_MANIFEST_FILE += $(DEVICE_PATH)/manifest.xml

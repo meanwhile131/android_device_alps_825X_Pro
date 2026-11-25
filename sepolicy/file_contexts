@@ -1,0 +1,7 @@
+# /file_contexts.bin is installed at the root of the system image when
+# BOARD_BUILD_SYSTEM_ROOT_IMAGE is true. Label it so e2fsdroid can assign a
+# security context while building system.img.
+/file_contexts.bin    u:object_r:file_contexts_file:s0
+/avm                  u:object_r:rootfs:s0
+/system/bin/touch_flip u:object_r:touch_flip_exec:s0
+/system/bin/mcu_keys  u:object_r:mcu_keys_exec:s0

@@ -135,6 +135,33 @@ LOCAL_SRC_FILES    := etc/multi_init.rc
 LOCAL_MODULE_PATH  := $(TARGET_OUT_VENDOR)/etc/init/hw
 include $(BUILD_PREBUILT)
 
+# Touchscreen X flip service (in /system/etc/init)
+include $(CLEAR_VARS)
+LOCAL_MODULE       := init.825x_touch.rc
+LOCAL_MODULE_TAGS  := optional
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES    := etc/init.825x_touch.rc
+LOCAL_MODULE_PATH  := $(TARGET_OUT)/etc/init
+include $(BUILD_PREBUILT)
+
+# Front-panel MCU key service (in /system/etc/init, like stock's MainUI path)
+include $(CLEAR_VARS)
+LOCAL_MODULE       := init.825x_keys.rc
+LOCAL_MODULE_TAGS  := optional
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES    := etc/init.825x_keys.rc
+LOCAL_MODULE_PATH  := $(TARGET_OUT)/etc/init
+include $(BUILD_PREBUILT)
+
+# USB role / adb default (in /system/etc/init so the vendor mount can't hide it)
+include $(CLEAR_VARS)
+LOCAL_MODULE       := init.825x_usb.rc
+LOCAL_MODULE_TAGS  := optional
+LOCAL_MODULE_CLASS := ETC
+LOCAL_SRC_FILES    := etc/init.825x_usb.rc
+LOCAL_MODULE_PATH  := $(TARGET_OUT)/etc/init
+include $(BUILD_PREBUILT)
+
 # fstab
 include $(CLEAR_VARS)
 LOCAL_MODULE       := fstab.ac8257

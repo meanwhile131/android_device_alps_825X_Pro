@@ -1,0 +1,8 @@
+# Mirror the touchscreen X axis. Started early so InputReader only sees the
+# uinput device published by touch_flip (the physical mtk-tpd node is grabbed).
+service touch_flip /system/bin/touch_flip
+    class early_hal
+    user root
+    group input net_bt_admin
+    oneshot
+    writepid /dev/cpuset/system-background/tasks

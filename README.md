@@ -6,3 +6,47 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ```
+
+## Custom vendor partition
+
+The vendor partition is built from the proprietary blobs in
+`vendor/alps/825X_Pro` and debloated: the native libs of stock priv-app APKs
+that are not shipped in LineageOS (Chrome, Google Maps, YouTube,
+EasyConnected, ES_sign, SRV_Upgrade) and the factory test images/sounds are
+commented out in `proprietary-files.txt` and excluded from
+`825X_Pro-vendor.mk`. All HALs, firmware and config blobs are kept, including
+the stock kernel modules, MediaTek HAL implementations, feature permissions and
+SELinux files under `vendor/alps/825X_Pro/proprietary/` that the generic build
+does not generate.
+
+The stock vendor SELinux files live in
+`vendor/alps/825X_Pro/proprietary/vendor/etc/selinux/` and are installed by
+`Android.mk`. `vendor.img` is labeled with a combination of our platform
+contexts and those stock vendor contexts, otherwise the MediaTek/AutoChips
+binaries get the generic `vendor_file` label, init cannot exec them and the
+device bootloops.
+
+`make_flashable_vendor.py` appends the stock AVB hashtree + vbmeta + footer
+from `prebuilts/vendor_avb_tail.bin` to the built sparse `vendor.img`. This is
+required because LK rejects a vendor image without the OEM-signed vbmeta. It
+runs as part of `m vendorimage` / `m droid`, or standalone via:
+
+```
+m flashable_vendorimage
+```
+
+Flash the generated image (raw or sparse, fastboot handles both):
+
+```
+fastboot flash vendor out/target/product/825X_Pro/vendor_flashable.img
+```
+
+Keep `BOARD_VENDORIMAGE_PARTITION_SIZE` at the stock content size: the stock
+hashtree/vbmeta offsets depend on it even though our content is smaller.
+
+## USB mode
+
+`init.825x_usb.rc` (installed to `/system/etc/init/`) defaults the dual-role
+port to USB **device** mode ("This device" in Settings), which is what makes
+adb work. The conflicting `data_role host` writes were removed from
+`init.ac8257.rc` and `init.ac8257.usb.rc`.

@@ -107,7 +107,7 @@ on property:sys.usb.config=nocarplay && property:sys.usb.configfs=1
     write /config/usb_gadget/g1/UDC "none"
     rm /config/usb_gadget/g1/configs/b.1/f4
     rm /config/usb_gadget/g1/configs/b.1/f5
-    write /sys/class/dual_role_usb/dual-role-usb20/data_role host
+    write /sys/class/dual_role_usb/dual-role-usb20/data_role device
     setprop sys.usb.state ${sys.usb.config}
 
 ### more command at init.usb.configfs.rc ###
