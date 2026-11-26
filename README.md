@@ -7,6 +7,24 @@
 #
 ```
 
+## Build host: Python 2 required
+
+LineageOS 16's build tools are Python 2 scripts with `#!/usr/bin/env python`
+shebangs. On a host where `python` is Python 3 they fail inside shell
+pipelines without failing the build: `normalize_path.py` emits nothing, so
+`java-source-list` ends up empty and Make-based apps (Settings, Trebuchet) are
+built with no Java code. The result is a Settings crash on a missing
+`SettingsSliceProvider` and a launcher with no icons. `mkbootimg` also computes
+a float page offset under Python 3 and fails when generating recovery.img.
+
+Put a Python 2 interpreter first in `PATH` before building:
+
+```
+export PATH=/path/to/python2/bin:$PATH
+source build/envsetup.sh && lunch lineage_825X_Pro-userdebug
+m
+```
+
 ## Custom vendor partition
 
 The vendor partition is built from the proprietary blobs in

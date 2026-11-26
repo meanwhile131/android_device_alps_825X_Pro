@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+     SPDX-FileCopyrightText: The LineageOS Project
+     SPDX-License-Identifier: Apache-2.0
+-->
+<permissions>
+    <!-- PrintSpooler and BuiltInPrintService are shipped, but nothing declared
+         the feature, so system_server never started PrintManagerService and
+         Settings crashed with a null PrintManager. -->
+    <feature name="android.software.print" />
+</permissions>

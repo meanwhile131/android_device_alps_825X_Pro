@@ -9,8 +9,8 @@ WITH_ADB_INSECURE := true
 # Inherit from those products. Most specific first.
 $(call inherit-product, $(SRC_TARGET_DIR)/product/core_64_bit.mk)
 $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
-# LineageOS common config (Lineage SDK packages, permissions, audio, etc.)
-$(call inherit-product, vendor/lineage/config/common.mk)
+# LineageOS full phone config: complete app set plus telephony (SIM, SMS, APNs)
+$(call inherit-product, vendor/lineage/config/common_full_phone.mk)
 
 # Inherit from 825X_Pro device
 $(call inherit-product, device/alps/825X_Pro/device.mk)

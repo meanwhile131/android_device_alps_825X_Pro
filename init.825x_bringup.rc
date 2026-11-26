@@ -13,6 +13,20 @@ service vendor_light_hal_fix /vendor/bin/hw/android.hardware.light@2.0-service-m
     group root
     seclabel u:r:init:s0
 
+service vendor_wmt_loader_fix /vendor/bin/wmt_loader
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+    oneshot
+
+service vendor_wmt_launcher_fix /vendor/bin/wmt_launcher -p /vendor/firmware/
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+    oneshot
+
 service vendor_wifi_hal_fix /vendor/bin/hw/android.hardware.wifi@1.0-service-mediatek
     class hal
     user root
@@ -31,11 +45,14 @@ service vendor_power_hal_fix /vendor/bin/hw/android.hardware.power@1.0-service
     group root
     seclabel u:r:init:s0
 
-service vendor_bluetooth_hal_fix /vendor/bin/hw/android.hardware.bluetooth@1.0-service-mediatek
-    class hal
+# Sets vendor.service.nvram_init=Ready. The stock rc only starts this from
+# vold.decrypt triggers, which never fire on this FBE device; without it the
+# BT HAL spends 5 s waiting for NVRAM and trips the 4 s BLE start timeout.
+service vendor_nvram_daemon_fix /vendor/bin/nvram_daemon
     user root
-    group root
+    group root system radio wifi audio bluetooth media
     seclabel u:r:init:s0
+    oneshot
 
 service vendor_ril_fix /vendor/bin/hw/mtkfusionrild -l libmtk-ril.so
     class hal
@@ -44,20 +61,6 @@ service vendor_ril_fix /vendor/bin/hw/mtkfusionrild -l libmtk-ril.so
     seclabel u:r:init:s0
     socket rild-oem stream 660 radio system
     socket rild-atci stream 660 root radio
-
-service vendor_wmt_loader_fix /vendor/bin/wmt_loader
-    class hal
-    user root
-    group root
-    seclabel u:r:init:s0
-    oneshot
-
-service vendor_wmt_launcher_fix /vendor/bin/wmt_launcher -p /vendor/firmware/
-    class hal
-    user root
-    group root
-    seclabel u:r:init:s0
-    oneshot
 
 on post-fs-data
     mkdir /data/vendor/wifi 0770 wifi wifi
@@ -70,6 +73,7 @@ on post-fs-data
     start vendor_wifi_hal_fix
     start vendor_gnss_hal_fix
     start vendor_power_hal_fix
+    start vendor_nvram_daemon_fix
     start keystore
     start installd
     start zygote
@@ -80,7 +84,6 @@ on post-fs-data
     start media
     start cameraserver
     start mediaextractor
-    start vendor_bluetooth_hal_fix
     start vendor_ril_fix
     start mcu_keys
 

@@ -14,7 +14,8 @@ PRODUCT_SHIPPING_API_LEVEL := 28
 PRODUCT_PACKAGES += android.hardware.power@1.0-service
 PRODUCT_COPY_FILES += \
     device/alps/825X_Pro/android.hardware.power@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.power@1.0-service.rc \
-    device/alps/825X_Pro/init.825x_bringup.rc:system/etc/init/init.825x_bringup.rc
+    device/alps/825X_Pro/init.825x_bringup.rc:system/etc/init/init.825x_bringup.rc \
+    device/alps/825X_Pro/permissions/android.software.print.xml:system/etc/permissions/android.software.print.xml
 
 # Overlays
 PRODUCT_ENFORCE_RRO_TARGETS := *
