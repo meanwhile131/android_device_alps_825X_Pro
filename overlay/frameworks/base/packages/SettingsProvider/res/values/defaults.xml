@@ -8,4 +8,7 @@
 <resources>
     <!-- Car head unit: no lockscreen by default. -->
     <bool name="def_lockscreen_disabled">true</bool>
+
+    <!-- Portrait panel: Android's default user rotation must be 1. -->
+    <integer name="def_user_rotation">1</integer>
 </resources>

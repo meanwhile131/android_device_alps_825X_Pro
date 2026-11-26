@@ -29,9 +29,10 @@ TARGET_NO_BOOTLOADER := true
 
 # Display
 # The LCD is physically mounted 90 degrees relative to the framebuffer.
-# Report this as the natural display orientation so SurfaceFlinger rotates the
-# composition and WindowManager's default rotation is already correct.
-SF_PRIMARY_DISPLAY_ORIENTATION := 90
+# Together with user_rotation=1 (default in the SettingsProvider overlay),
+# SF_PRIMARY_DISPLAY_ORIENTATION=180 makes the portrait panel draw upright.
+# The boot animation frames are pre-rotated separately to match.
+SF_PRIMARY_DISPLAY_ORIENTATION := 180
 
 # The live mtkfb framebuffer reports 1024x768 (fb0/modes), not the panel's
 # 720x1280 touch resolution in the DTBO. Match the framebuffer so TWRP picks
@@ -62,7 +63,11 @@ BOARD_KERNEL_BASE := 0x40078000
 # buildvariant=$(TARGET_BUILD_VARIANT) is appended by build/make/core/Makefile
 # veritymode=disabled: our system.img has no AVB hashtree (sparse image), so
 # first-stage init must not try to set up dm-verity on it.
-BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2 androidboot.veritymode=disabled
+# Bring-up: the stock vendor CIL can't be combined with our platform CIL by
+# init's secilc (-N rejects its genfscon rules), so the platform-only
+# precompiled policy leaves vendor files unlabeled and HALs fail to start.
+# Boot permissive until a combined precompiled policy is generated.
+BOARD_KERNEL_CMDLINE := bootopt=64S3,32N2,64N2 androidboot.veritymode=disabled androidboot.selinux=permissive
 BOARD_KERNEL_PAGESIZE := 2048
 BOARD_MKBOOTIMG_ARGS += --header_version $(BOARD_BOOT_HEADER_VERSION)
 # Load addresses must match stock: the decompressed kernel is ~27 MB and would
@@ -74,12 +79,34 @@ BOARD_MKBOOTIMG_ARGS += --tags_offset 0x07808000
 BOARD_KERNEL_IMAGE_NAME := Image
 BOARD_KERNEL_SEPARATED_DTBO := true
 TARGET_KERNEL_CONFIG := 825X_Pro_defconfig
-TARGET_KERNEL_SOURCE := kernel/alps/825X_Pro
+# lineage-sdk's Android.mk (droiddoc target lineage-api-stubs) still reads this
+# make variable, but it was left undefined when the platform library moved to
+# Android.bp. Without it the API-stub javadoc run lacks support-v7 preference,
+# libphonenumber and services on its classpath and fails. Mirror the Soong
+# library list here so checkapi-lineage can generate its stubs.
+lineage_sdk_LOCAL_JAVA_LIBRARIES := \
+    android-support-annotations \
+    android-support-v7-preference \
+    android-support-v7-recyclerview \
+    android-support-v14-preference \
+    libphonenumber \
+    services
+
+# The lineage-sdk source and the prebuilts/lineage-sdk/api/9.txt baseline come
+# from different vintages, so checkpublicapi-lineage always reports false
+# differences. Skip API checks for this local build.
+WITHOUT_CHECK_API := true
+
+# No kernel source checkout on this device. Point the Soong
+# generated_kernel_includes module at the headers-only stand-in tree so its
+# `make -C ... headers_install` has a real directory to run in. The actual
+# kernel binary stays prebuilt (see Android.mk, where TARGET_PREBUILT_KERNEL
+# is set after soong.variables has been generated).
+TARGET_KERNEL_SOURCE := device/alps/825X_Pro/kernel_headers
 
 # Kernel - prebuilt
 TARGET_FORCE_PREBUILT_KERNEL := true
 ifeq ($(TARGET_FORCE_PREBUILT_KERNEL),true)
-TARGET_PREBUILT_KERNEL := $(DEVICE_PATH)/prebuilts/kernel
 # The recovery DTBO is the 43511-byte image at the start of the dtbo partition;
 # embedding the full 8 MB partition image makes the bootloader reject recovery.
 BOARD_PREBUILT_DTBOIMAGE := $(DEVICE_PATH)/prebuilts/recovery_dtbo.img

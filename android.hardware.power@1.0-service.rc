@@ -1,0 +1,7 @@
+# Android framework asks for android.hardware.power@1.0::IPower/default;
+# the stock vendor only ships the MediaTek 2.0 HAL, so provide the standard
+# 1.0 service that wraps vendor/lib64/hw/power.default.so.
+service vendor.power-hal-1-0 /vendor/bin/hw/android.hardware.power@1.0-service
+    class hal
+    user system
+    group system

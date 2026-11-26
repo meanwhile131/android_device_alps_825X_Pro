@@ -10,6 +10,18 @@ ifeq ($(TARGET_DEVICE),825X_Pro)
 # Preserve the device path: all-subdir-makefiles changes LOCAL_PATH.
 _825X_PATH := $(LOCAL_PATH)
 
+# The kernel binary is prebuilt, but the Soong generated_kernel_includes
+# module needs TARGET_KERNEL_SOURCE to point at a real directory (see
+# BoardConfig.mk). soong.variables was already written by config.mk at this
+# point, so clear the variable here for the make side only: vendor/*/build/
+# tasks/kernel.mk runs later and would otherwise try to build a kernel from
+# the headers-only stand-in tree. TARGET_PREBUILT_KERNEL is deliberately set
+# late too, so BoardConfigKernel.mk does not clear TARGET_KERNEL_SOURCE.
+ifeq ($(TARGET_FORCE_PREBUILT_KERNEL),true)
+TARGET_PREBUILT_KERNEL := $(_825X_PATH)/prebuilts/kernel
+TARGET_KERNEL_SOURCE :=
+endif
+
 # The kernel's built-in first-stage fstab mounts the avm partition at /avm.
 # Stock system.img has that directory; without it init aborts early and reboots
 # straight to the bootloader (looks like a "boot failure" in fastboot).
@@ -41,13 +53,18 @@ _825X_SRC_SEPOLICY := $(TARGET_OUT_VENDOR)/etc/selinux/precompiled_sepolicy
 _825X_ROOT_SETUP  := $(TARGET_ROOT_OUT)/init.environ.rc
 _825X_ODM_ETC     := $(TARGET_ROOT_OUT)/odm/etc
 
-# Replace the /odm/etc -> /vendor/odm/etc symlink with a real directory, but
-# do NOT ship a precompiled policy there: we want init to compile the policy
-# at boot from our platform CIL plus the stock vendor CIL, so stock vendor
-# labels/rules are included in the running policy.
-$(_825X_ODM_ETC): $(_825X_ROOT_SETUP)
+# Replace the /odm/etc -> /vendor/odm/etc symlink with a real directory and
+# ship the platform's own precompiled policy there. The vendor partition's
+# stock precompiled_sepolicy has a different plat_and_mapping sha256, so init
+# ignores it, tries to compile platform + stock vendor CIL at boot, secilc
+# fails on genfscon rules, and init reboots straight to the bootloader.
+_825X_PRECOMPILED_SEPOLICY := $(call intermediates-dir-for,ETC,precompiled_sepolicy)/precompiled_sepolicy
+_825X_PRECOMPILED_SHA := $(call intermediates-dir-for,ETC,precompiled_sepolicy.plat_and_mapping.sha256)/precompiled_sepolicy.plat_and_mapping.sha256
+$(_825X_ODM_ETC): $(_825X_ROOT_SETUP) $(_825X_PRECOMPILED_SEPOLICY) $(_825X_PRECOMPILED_SHA)
 	$(hide) rm -rf $@
 	$(hide) mkdir -p $@/selinux
+	$(hide) cp $(_825X_PRECOMPILED_SEPOLICY) $@/selinux/precompiled_sepolicy
+	$(hide) cp $(_825X_PRECOMPILED_SHA) $@/selinux/precompiled_sepolicy.plat_and_mapping.sha256
 
 $(PRODUCT_OUT)/system.img: $(_825X_ODM_ETC)
 

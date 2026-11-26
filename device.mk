@@ -8,6 +8,14 @@ PRODUCT_SHIPPING_API_LEVEL := 28
 
 # Health: the vendor health@2.0 service is provided by proprietary files
 
+# The stock vendor only has the MediaTek power HAL 2.0; Android's
+# PowerManagerService asks for android.hardware.power@1.0, so build and start
+# the standard 1.0 passthrough service as well.
+PRODUCT_PACKAGES += android.hardware.power@1.0-service
+PRODUCT_COPY_FILES += \
+    device/alps/825X_Pro/android.hardware.power@1.0-service.rc:$(TARGET_COPY_OUT_VENDOR)/etc/init/android.hardware.power@1.0-service.rc \
+    device/alps/825X_Pro/init.825x_bringup.rc:system/etc/init/init.825x_bringup.rc
+
 # Overlays
 PRODUCT_ENFORCE_RRO_TARGETS := *
 PRODUCT_PACKAGE_OVERLAYS += device/alps/825X_Pro/overlay
@@ -31,12 +39,9 @@ PRODUCT_DEFAULT_PROPERTY_OVERRIDES += persist.sys.usb.config=adb
 # system_server in a boot loop.
 PRODUCT_DEFAULT_PROPERTY_OVERRIDES += ro.control_privapp_permissions=disable
 
-# adbd execs /sbin/sh with a lone "-" for interactive shells. Our recovery
-# ramdisk has a stale `sh -> recovery` symlink, which makes the recovery
-# binary try to open a file literally named "-" and print
-# "Problem opening - for reading!". Point adbd at the real bash binary that
-# TWRP ships in /sbin instead.
-PRODUCT_DEFAULT_PROPERTY_OVERRIDES += persist.sys.adb.shell=/sbin/bash
+# Use the normal Android shell for adbd; /sbin/bash only exists in the
+# recovery ramdisk and breaks `adb shell` once Android is running.
+PRODUCT_DEFAULT_PROPERTY_OVERRIDES += persist.sys.adb.shell=/system/bin/sh
 
 # Product characteristics
 PRODUCT_CHARACTERISTICS := default

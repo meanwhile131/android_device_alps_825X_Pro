@@ -1,0 +1,86 @@
+# The platform-only precompiled sepolicy has no domains for the stock vendor
+# HALs, so init refuses to start their own rc services ("Could not get process
+# context"). Start the ones needed for boot here with an explicit init context.
+service vendor_audio_hal_fix /vendor/bin/hw/android.hardware.audio@4.0-service-mediatek
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+
+service vendor_light_hal_fix /vendor/bin/hw/android.hardware.light@2.0-service-mediatek
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+
+service vendor_wifi_hal_fix /vendor/bin/hw/android.hardware.wifi@1.0-service-mediatek
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+
+service vendor_gnss_hal_fix /vendor/bin/hw/vendor.mediatek.hardware.gnss@1.1-service
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+
+service vendor_power_hal_fix /vendor/bin/hw/android.hardware.power@1.0-service
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+
+service vendor_bluetooth_hal_fix /vendor/bin/hw/android.hardware.bluetooth@1.0-service-mediatek
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+
+service vendor_ril_fix /vendor/bin/hw/mtkfusionrild -l libmtk-ril.so
+    class hal
+    user root
+    group root radio
+    seclabel u:r:init:s0
+    socket rild-oem stream 660 radio system
+    socket rild-atci stream 660 root radio
+
+service vendor_wmt_loader_fix /vendor/bin/wmt_loader
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+    oneshot
+
+service vendor_wmt_launcher_fix /vendor/bin/wmt_launcher -p /vendor/firmware/
+    class hal
+    user root
+    group root
+    seclabel u:r:init:s0
+    oneshot
+
+on post-fs-data
+    mkdir /data/vendor/wifi 0770 wifi wifi
+    mkdir /data/vendor/wifi/wpa 0770 wifi wifi
+    mkdir /data/vendor/wifi/wpa/sockets 0770 wifi wifi
+    start vendor_audio_hal_fix
+    start vendor_light_hal_fix
+    start vendor_wmt_loader_fix
+    start vendor_wmt_launcher_fix
+    start vendor_wifi_hal_fix
+    start vendor_gnss_hal_fix
+    start vendor_power_hal_fix
+    start keystore
+    start installd
+    start zygote
+    start zygote_secondary
+    start netd
+    start storaged
+    start wificond
+    start media
+    start cameraserver
+    start mediaextractor
+    start vendor_bluetooth_hal_fix
+    start vendor_ril_fix
+    start mcu_keys
+
