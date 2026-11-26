@@ -59,6 +59,9 @@ static mcu_fn mcu_get_skey;
 /* Used to restore the stock MCU backlight state (see above). */
 static mcu_fn mcu_bkl_is_on;
 static mcu_fn mcu_bkl_turn;
+/* Stock MainUI power-state handshake (see DealTask()/CheckPoweroffState()). */
+static mcu_fn mcu_get_pow_state;
+static mcu_fn mcu_send_bye_bye;
 
 /* Vendor key codes from KeyDef.java in the stock MainUI. */
 struct key_map {
@@ -113,6 +116,8 @@ static struct key_map key_map[] = {
 #define BITS_PER_LONG (sizeof(unsigned long) * 8)
 #define NBITS(x) (((x) + BITS_PER_LONG - 1) / BITS_PER_LONG)
 #define KEY_BITS NBITS(KEY_MAX)
+/* 10 * 50 ms: long enough to reject ignition glitches. */
+#define ACC_OFF_TICKS 10
 
 static volatile sig_atomic_t running = 1;
 
@@ -220,6 +225,20 @@ static void wake_backlight(void) {
     ALOGW("could not restore MCU backlight");
 }
 
+/* Stock Notifier.setSuspendState() uses this to mark quickboot transitions
+ * for the bootloader. The node records the last state; it does not suspend. */
+static void write_boot_state(const char *state) {
+    int fd = open("/sys/boot/state", O_WRONLY);
+    if (fd < 0) {
+        ALOGE("open /sys/boot/state: %s", strerror(errno));
+        return;
+    }
+    size_t len = strlen(state);
+    if (write(fd, state, len) != (ssize_t)len)
+        ALOGE("write /sys/boot/state: %s", strerror(errno));
+    close(fd);
+}
+
 static void handle_key(int fd, int mcu_code, const char *kind) {
     if (mcu_code == 0 || mcu_code == 0x51) return; /* 0x51 = held/repeat sentinel */
     for (size_t i = 0; i < sizeof(key_map) / sizeof(key_map[0]); i++) {
@@ -260,8 +279,11 @@ static int load_mcu_library(void) {
     mcu_get_skey = (mcu_fn)dlsym(handle, "GetSkey");
     mcu_bkl_is_on = (mcu_fn)dlsym(handle, "BklisOn");
     mcu_bkl_turn = (mcu_fn)dlsym(handle, "BklTurn");
+    mcu_get_pow_state = (mcu_fn)dlsym(handle, "GetPowState");
+    mcu_send_bye_bye = (mcu_fn)dlsym(handle, "SendByeBye");
     if (!mcu_init || !mcu_next || !mcu_task || !mcu_get_pkey || !mcu_get_rkey ||
-        !mcu_get_ekey || !mcu_get_skey || !mcu_bkl_is_on || !mcu_bkl_turn) {
+        !mcu_get_ekey || !mcu_get_skey || !mcu_bkl_is_on || !mcu_bkl_turn ||
+        !mcu_get_pow_state || !mcu_send_bye_bye) {
         ALOGE("dlsym failed: %s", dlerror());
         return -1;
     }
@@ -291,8 +313,13 @@ int main(void) {
         handle_key(fd, test_code, "test");
     }
 
+    int acc_handshake = prop_int("persist.mcu_keys.acc_handshake", 1);
+
     ALOGI("825X_Pro MCU key daemon running");
     unsigned int ticks = 0;
+    unsigned int acc_off_ticks = 0;
+    int acc_off = -1;
+    int bye_sent = 0;
     while (running) {
         int task_rc = mcu_task();
         ticks++;
@@ -301,6 +328,26 @@ int main(void) {
          * early makes c_Uart4Read() dereference a null context. */
         if (ticks == 20) ALOGI("mcunext() = %d", mcu_next());
         if (ticks % 100 == 0) ALOGI("mcutask() = %d", task_rc);
+
+        /* Stock MainUI.GetMcuState(): state 3 is ACC off, 0/2 are ACC on. */
+        int pow = mcu_get_pow_state();
+        int off = !((pow & 0x2) || (pow & 0x8));
+        if (off != acc_off) {
+            ALOGI("ACC %s (pow=0x%02x)", off ? "off" : "on", pow);
+            if (!off) write_boot_state("resume_end");
+            acc_off = off;
+            acc_off_ticks = 0;
+            bye_sent = 0;
+        }
+        if (off && acc_handshake && !bye_sent &&
+            ++acc_off_ticks >= ACC_OFF_TICKS) {
+            write_boot_state("suspend_start");
+            ALOGI("ACC off -> SendByeBye() = %d", mcu_send_bye_bye());
+            send_key(fd, KEY_POWER, 1);
+            usleep(60000);
+            send_key(fd, KEY_POWER, 0);
+            bye_sent = 1;
+        }
         handle_key(fd, mcu_get_pkey(), "P");
         handle_key(fd, mcu_get_rkey(), "R");
         handle_key(fd, mcu_get_ekey(), "E");

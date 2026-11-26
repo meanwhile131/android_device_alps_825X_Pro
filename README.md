@@ -77,6 +77,17 @@ does not handle on its own:
   published as `KEY_MUTE`, matching stock MainUI's mute action. The dedicated
   power codes from the stock key definitions are still published as
   `KEY_POWER`.
+* Disconnecting the ignition wire makes the MCU report power state 3. Stock
+  MainUI answers that with `Mcu.SendByeBye()`; without it the MCU hard-resets
+  the unit a few seconds later. `mcu_keys` sends the same handshake after a
+  500 ms debounce, marks `/sys/boot/state` as `suspend_start`/`resume_end` like
+  stock's Notifier, and injects a power key so Android sleeps with the panel.
+  Set `persist.mcu_keys.acc_handshake=0` to disable it.
+* Full stock quick boot also needs framework patches (`PowerManagerService`,
+  `Notifier`, `PhoneWindowManager`, `AlarmManagerService`, `JobServiceContext`)
+  and the `QuickBootManager` app with `/vendor/etc/qb_list.xml` to stop
+  non-whitelisted apps. Those are not part of LineageOS, so this port does not
+  reach stock's 0.00 A deep suspend.
 
 Use `persist.mcu_keys.power=<linux keycode>` to remap or disable it (0), and
 `persist.mcu_keys.<name>` for the other buttons.
