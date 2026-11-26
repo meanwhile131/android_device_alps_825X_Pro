@@ -17,13 +17,39 @@ built with no Java code. The result is a Settings crash on a missing
 `SettingsSliceProvider` and a launcher with no icons. `mkbootimg` also computes
 a float page offset under Python 3 and fails when generating recovery.img.
 
-Put a Python 2 interpreter first in `PATH` before building:
+Put a Python 2 interpreter first in `PATH` before building. The kernel Kbuild
+also needs `bc` to generate `timeconst.h`:
 
 ```
 export PATH=/path/to/python2/bin:$PATH
 source build/envsetup.sh && lunch lineage_825X_Pro-userdebug
 m
 ```
+
+## Kernel
+
+The kernel is built from source rather than shipped as a prebuilt binary. The
+exact vendor GPL sources (Linux 4.9.117 for AC8257) are synced to
+`kernel/alps/825X_Pro` by `.repo/local_manifests/ac8257_demo.xml`, from the
+`autochips-gpl` branch of `LibreHU/android_kernel_autochips_ac8257_4.9`.
+
+`arch/arm64/configs/825X_Pro_defconfig` in that tree is the built-in IKCONFIG
+of the stock kernel, so the source build carries the same configuration as the
+old prebuilt image. The stock toolchain is used as well: AOSP clang 6.0.2
+(prebuilt 4691093) with the GCC 4.9 binutils.
+
+`prebuilts/recovery_dtbo.img` is still used for the recovery DTBO: it is the
+43511-byte slice from the stock `dtbo` partition. The bootloader rejects the
+full 8 MB partition image that a source DTBO build would produce.
+
+Build just the kernel with:
+
+```
+m kernel
+```
+
+The headers-only stand-in under `kernel_headers/` is no longer needed; Soong's
+`generated_kernel_includes` now uses the real source tree.
 
 ## Custom vendor partition
 

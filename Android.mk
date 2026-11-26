@@ -10,18 +10,6 @@ ifeq ($(TARGET_DEVICE),825X_Pro)
 # Preserve the device path: all-subdir-makefiles changes LOCAL_PATH.
 _825X_PATH := $(LOCAL_PATH)
 
-# The kernel binary is prebuilt, but the Soong generated_kernel_includes
-# module needs TARGET_KERNEL_SOURCE to point at a real directory (see
-# BoardConfig.mk). soong.variables was already written by config.mk at this
-# point, so clear the variable here for the make side only: vendor/*/build/
-# tasks/kernel.mk runs later and would otherwise try to build a kernel from
-# the headers-only stand-in tree. TARGET_PREBUILT_KERNEL is deliberately set
-# late too, so BoardConfigKernel.mk does not clear TARGET_KERNEL_SOURCE.
-ifeq ($(TARGET_FORCE_PREBUILT_KERNEL),true)
-TARGET_PREBUILT_KERNEL := $(_825X_PATH)/prebuilts/kernel
-TARGET_KERNEL_SOURCE :=
-endif
-
 # The kernel's built-in first-stage fstab mounts the avm partition at /avm.
 # Stock system.img has that directory; without it init aborts early and reboots
 # straight to the bootloader (looks like a "boot failure" in fastboot).
