@@ -44,6 +44,25 @@ fastboot flash vendor out/target/product/825X_Pro/vendor_flashable.img
 Keep `BOARD_VENDORIMAGE_PARTITION_SIZE` at the stock content size: the stock
 hashtree/vbmeta offsets depend on it even though our content is smaller.
 
+## Front-panel keys, backlight and power
+
+`mcu_keys` drains the stock MCU key queue and publishes the buttons through
+uinput. It also reproduces two bits of stock MainUI behaviour that Android
+does not handle on its own:
+
+* The panel backlight is switched by the MCU over UART, not only by Android's
+  light HAL. `mcu_keys` checks `Mcu.BklisOn()` on each key and calls
+  `Mcu.BklTurn()` until the panel is reported on, so the display is not left
+  dark after Android blanks it on sleep. It does not turn the backlight off —
+  that is left to Android's normal display power handling.
+* The VOL knob press is reported by this panel as `PKEY_MUTE` (`0x010`) and is
+  published as `KEY_MUTE`, matching stock MainUI's mute action. The dedicated
+  power codes from the stock key definitions are still published as
+  `KEY_POWER`.
+
+Use `persist.mcu_keys.power=<linux keycode>` to remap or disable it (0), and
+`persist.mcu_keys.<name>` for the other buttons.
+
 ## USB mode
 
 `init.825x_usb.rc` (installed to `/system/etc/init/`) defaults the dual-role

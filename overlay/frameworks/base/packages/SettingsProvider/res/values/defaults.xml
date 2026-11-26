@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  825X_Pro: the panel is physically rotated 90 degrees relative to the
-  framebuffer (see BoardConfig.mk).  ro.sf.hwrotation=90 handles drawing, but
-  Settings.System.USER_ROTATION must match or input/UI orientation is wrong.
-  Stock ships this as 0; make the correct value the factory default.
+    SPDX-FileCopyrightText: 2026 The LineageOS Project
+    SPDX-License-Identifier: Apache-2.0
+
+    825X_Pro: the panel is physically rotated 90 degrees relative to the
+    framebuffer (see BoardConfig.mk).  ro.sf.hwrotation=90 handles drawing, but
+    Settings.System.USER_ROTATION must match or input/UI orientation is wrong.
+    Stock ships this as 0; make the correct value the factory default.
 -->
 <resources>
     <!-- Car head unit: no lockscreen by default. -->
@@ -11,4 +14,9 @@
 
     <!-- Portrait panel: Android's default user rotation must be 1. -->
     <integer name="def_user_rotation">1</integer>
+
+    <!-- Car head unit: never blank the display from inactivity. PowerManager
+         treats the maximum int as no timeout; a shorter value triggers mtkfb
+         early suspend, whose 10s arm2 wait blanks the panel on resume. -->
+    <integer name="def_screen_off_timeout">2147483647</integer>
 </resources>

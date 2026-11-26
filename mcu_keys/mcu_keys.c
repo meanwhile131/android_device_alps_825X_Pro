@@ -1,4 +1,7 @@
 /*
+ * SPDX-FileCopyrightText: 2026 The LineageOS Project
+ * SPDX-License-Identifier: Apache-2.0
+ *
  * 825X_Pro: front-panel hardware buttons.
  *
  * The buttons on this head unit are not wired to the MTK keypad matrix.
@@ -17,6 +20,11 @@
  * (Generic.kl maps them to Android keycodes).  The mapping can be changed at
  * runtime with persist.mcu_keys.<name> properties (decimal Linux keycode,
  * 0 disables the key).
+ *
+ * One bit of stock MainUI behaviour is reproduced here as well: the backlight
+ * is driven by the MCU, not by Android's light HAL. Stock calls BklTurn()
+ * whenever a key arrives while BklisOn() says the panel is dark. Without that
+ * the LCD stays off after Android blanks it on sleep.
  */
 
 #define LOG_TAG "mcu_keys"
@@ -48,6 +56,9 @@ static mcu_fn mcu_get_pkey;
 static mcu_fn mcu_get_rkey;
 static mcu_fn mcu_get_ekey;
 static mcu_fn mcu_get_skey;
+/* Used to restore the stock MCU backlight state (see above). */
+static mcu_fn mcu_bkl_is_on;
+static mcu_fn mcu_bkl_turn;
 
 /* Vendor key codes from KeyDef.java in the stock MainUI. */
 struct key_map {
@@ -70,6 +81,14 @@ static struct key_map key_map[] = {
     { "sel",    0x007, KEY_ENTER },       /* PKEY_SET / SEL */
     { "volup",  0x013, KEY_VOLUMEUP },    /* PKEY_VOLUP */
     { "voldn",  0x014, KEY_VOLUMEDOWN },  /* PKEY_VOLDN */
+
+    /* Stock MainUI treats the VOL knob press as PKEY_MUTE, not power. */
+    { "mute",   0x010, KEY_MUTE },        /* PKEY_MUTE / VOL knob press */
+
+    /* Power keys from the stock key definitions (other hardware/remote). */
+    { "power",  0x046, KEY_POWER },       /* PKEY_POWER */
+    { "power",  0x13a, KEY_POWER },       /* RKEY_POWER */
+    { "power",  0x301, KEY_POWER },       /* SKEY_POWEWR_1 */
 
     /* remote/rotary-key codes used by the same panel */
     { "menu",   0x103, KEY_MENU },        /* RKEY_MENU */
@@ -188,6 +207,19 @@ static void send_key(int fd, int code, int value) {
     }
 }
 
+/* The panel backlight is switched by the MCU over UART, not by Android's
+ * light HAL. Stock MainUI calls BklTurn() when BklisOn() says the panel is
+ * dark. BklTurn() cycles a 3-state value and BklisOn() reports "on" for two
+ * of them, so keep toggling until the panel is reported on again. */
+static void wake_backlight(void) {
+    for (int tries = 0; tries < 3; tries++) {
+        if (mcu_bkl_is_on() != 0) return;
+        ALOGI("backlight off -> BklTurn() (%d)", tries);
+        mcu_bkl_turn();
+    }
+    ALOGW("could not restore MCU backlight");
+}
+
 static void handle_key(int fd, int mcu_code, const char *kind) {
     if (mcu_code == 0 || mcu_code == 0x51) return; /* 0x51 = held/repeat sentinel */
     for (size_t i = 0; i < sizeof(key_map) / sizeof(key_map[0]); i++) {
@@ -196,6 +228,7 @@ static void handle_key(int fd, int mcu_code, const char *kind) {
         if (code <= 0 || code >= KEY_MAX) return;
         ALOGI("%s key 0x%03x -> Linux key %d (%s)", kind, mcu_code, code,
               key_map[i].name);
+        wake_backlight();
         send_key(fd, code, 1);
         usleep(60000);
         send_key(fd, code, 0);
@@ -225,8 +258,10 @@ static int load_mcu_library(void) {
     mcu_get_rkey = (mcu_fn)dlsym(handle, "GetRkey");
     mcu_get_ekey = (mcu_fn)dlsym(handle, "GetEkey");
     mcu_get_skey = (mcu_fn)dlsym(handle, "GetSkey");
+    mcu_bkl_is_on = (mcu_fn)dlsym(handle, "BklisOn");
+    mcu_bkl_turn = (mcu_fn)dlsym(handle, "BklTurn");
     if (!mcu_init || !mcu_next || !mcu_task || !mcu_get_pkey || !mcu_get_rkey ||
-        !mcu_get_ekey || !mcu_get_skey) {
+        !mcu_get_ekey || !mcu_get_skey || !mcu_bkl_is_on || !mcu_bkl_turn) {
         ALOGE("dlsym failed: %s", dlerror());
         return -1;
     }
@@ -250,7 +285,11 @@ int main(void) {
     /* Optional self-test: set persist.mcu_keys.test to a vendor key code
      * (decimal, e.g. 8 for MENU) to inject one synthetic press at startup. */
     int test_code = prop_int("debug.mcu_keys.test", 0);
-    if (test_code) handle_key(fd, test_code, "test");
+    if (test_code) {
+        /* Give InputReader time to open the uinput node before injecting. */
+        usleep(500000);
+        handle_key(fd, test_code, "test");
+    }
 
     ALOGI("825X_Pro MCU key daemon running");
     unsigned int ticks = 0;
