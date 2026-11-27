@@ -7,46 +7,29 @@
 #
 ```
 
-## Build host: Python 2 required
-
-LineageOS 16's build tools are Python 2 scripts with `#!/usr/bin/env python`
-shebangs. On a host where `python` is Python 3 they fail inside shell
-pipelines without failing the build: `normalize_path.py` emits nothing, so
-`java-source-list` ends up empty and Make-based apps (Settings, Trebuchet) are
-built with no Java code. The result is a Settings crash on a missing
-`SettingsSliceProvider` and a launcher with no icons. `mkbootimg` also computes
-a float page offset under Python 3 and fails when generating recovery.img.
-
-Put a Python 2 interpreter first in `PATH` before building. The kernel Kbuild
-also needs `bc` to generate `timeconst.h`:
-
-```
-export PATH=/path/to/python2/bin:$PATH
-source build/envsetup.sh && lunch lineage_825X_Pro-userdebug
-m
-```
-
 ## Kernel
 
-The kernel is built from source rather than shipped as a prebuilt binary. The
-exact vendor GPL sources (Linux 4.9.117 for AC8257) are synced to
-`kernel/alps/825X_Pro` by `.repo/local_manifests/ac8257_demo.xml`, from the
-`autochips-gpl` branch of `LibreHU/android_kernel_autochips_ac8257_4.9`.
+`boot.img` is built with the stock kernel in `prebuilts/kernel` (the GPL
+`Image.gz-dtb` from the working boot image). The exact vendor GPL sources
+(Linux 4.9.117 for AC8257) are synced to `kernel/alps/825X_Pro` by
+`.repo/local_manifests/ac8257_demo.xml`, from the `autochips-gpl` branch of
+`LibreHU/android_kernel_autochips_ac8257_4.9`; they stay in the tree for
+Soong's `generated_kernel_includes` and as the source for the prebuilt.
 
-`arch/arm64/configs/825X_Pro_defconfig` in that tree is the built-in IKCONFIG
-of the stock kernel, so the source build carries the same configuration as the
-old prebuilt image. The stock toolchain is used as well: AOSP clang 6.0.2
-(prebuilt 4691093) with the GCC 4.9 binutils.
+Do not switch `boot.img` back to a source-built kernel as-is. The DTB generated
+from that tree is for the UJC201/Jancar board: it reserves a 56 MB framebuffer
+at 0x61800000 and places mdp at 0x65100000. This panel's LK/ARM2 firmware
+expects the 825X_Pro layout (28 MB framebuffer, mdp at 0x63500000); with the
+wrong layout the panel stays dark while the backlight comes on. The stock
+kernel is byte-for-byte the one in the known-good `boot_flashable.img`.
 
 `prebuilts/recovery_dtbo.img` is still used for the recovery DTBO: it is the
 43511-byte slice from the stock `dtbo` partition. The bootloader rejects the
 full 8 MB partition image that a source DTBO build would produce.
 
-Build just the kernel with:
-
-```
-m kernel
-```
+`m kernel` installs the prebuilt kernel to `out/target/product/825X_Pro/kernel`,
+which is what `mkbootimg` packs into `boot.img` and `recovery.img`. A kernel
+source rebuild is not part of the normal `m droid` flow.
 
 The headers-only stand-in under `kernel_headers/` is no longer needed; Soong's
 `generated_kernel_includes` now uses the real source tree.
@@ -70,23 +53,20 @@ contexts and those stock vendor contexts, otherwise the MediaTek/AutoChips
 binaries get the generic `vendor_file` label, init cannot exec them and the
 device bootloops.
 
-`make_flashable_vendor.py` appends the stock AVB hashtree + vbmeta + footer
-from `prebuilts/vendor_avb_tail.bin` to the built sparse `vendor.img`. This is
-required because LK rejects a vendor image without the OEM-signed vbmeta. It
-runs as part of `m vendorimage` / `m droid`, or standalone via:
+## Verified Boot
+
+LK rejects a vbmeta signed with the AOSP test key unless verification is
+disabled, so `m vbmetaimage` / `m droid` builds
+`out/target/product/825X_Pro/vbmeta.img` with `SHA256_RSA2048` and flags 3
+(hashtree disabled, verification disabled). Flash it alongside the other
+images:
 
 ```
-m flashable_vendorimage
+fastboot flash vbmeta out/target/product/825X_Pro/vbmeta.img
 ```
 
-Flash the generated image (raw or sparse, fastboot handles both):
-
-```
-fastboot flash vendor out/target/product/825X_Pro/vendor_flashable.img
-```
-
-Keep `BOARD_VENDORIMAGE_PARTITION_SIZE` at the stock content size: the stock
-hashtree/vbmeta offsets depend on it even though our content is smaller.
+With verification disabled the built images need no AVB tail, so `system.img`,
+`vendor.img` and `recovery.img` can be flashed as produced by the build.
 
 ## Front-panel keys, backlight and power
 

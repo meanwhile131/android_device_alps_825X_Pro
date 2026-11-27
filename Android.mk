@@ -10,6 +10,23 @@ ifeq ($(TARGET_DEVICE),825X_Pro)
 # Preserve the device path: all-subdir-makefiles changes LOCAL_PATH.
 _825X_PATH := $(LOCAL_PATH)
 
+# ---------------------------------------------------------------------------
+# Boot kernel: use the stock prebuilt Image.gz-dtb.
+#
+# The DTB appended by a source build comes from the UJC201/Jancar device tree
+# (56 MB framebuffer at 0x61800000, mdp at 0x65100000). This panel's LK/ARM2
+# firmware expects the 825X_Pro layout instead (28 MB framebuffer, mdp at
+# 0x63500000); booting with the wrong DTB leaves the panel dark with the
+# backlight on. The stock kernel is also what the known-good boot_flashable.img
+# carries, so copy it to INSTALLED_KERNEL_TARGET for boot/recovery.
+#
+# Keep TARGET_KERNEL_SOURCE for Soong's generated_kernel_includes (its
+# soong.variables was already written from BoardConfig.mk). Clearing it only
+# on the make side is what selects kernel.mk's prebuilt-kernel path.
+# ---------------------------------------------------------------------------
+TARGET_PREBUILT_KERNEL := $(_825X_PATH)/prebuilts/kernel
+TARGET_KERNEL_SOURCE :=
+
 # The kernel's built-in first-stage fstab mounts the avm partition at /avm.
 # Stock system.img has that directory; without it init aborts early and reboots
 # straight to the bootloader (looks like a "boot failure" in fastboot).
@@ -84,65 +101,6 @@ $(PRODUCT_OUT)/ramdisk-recovery.cpio: $(_825X_RECOVERY_SH)
 $(PRODUCT_OUT)/recovery.img: $(_825X_RECOVERY_SH)
 
 # ---------------------------------------------------------------------------
-# Flashable recovery image (OEM vbmeta)
-#
-# This device's LK only boots a recovery that carries an OEM-signed AVB
-# vbmeta:
-#   * test-key signed vbmeta -> rejected, drops to fastboot
-#   * no vbmeta at all       -> hangs at the boot logo
-#
-# The stock recovery's vbmeta is shipped as a prebuilt and re-used verbatim.
-# LK validates the OEM signature but (as with Magisk-patched images) ignores
-# that the hash descriptor no longer matches the rebuilt image.
-#
-# Hook the patch into the normal recovery build so that
-#   m recoveryimage
-# leaves out/target/product/825X_Pro/recovery.img directly flashable with
-#   fastboot flash recovery out/target/product/825X_Pro/recovery.img
-# ---------------------------------------------------------------------------
-_825X_VBMETA_BLOB  := $(_825X_PATH)/prebuilts/recovery_vbmeta.bin
-_825X_VBMETA_TOOL  := $(_825X_PATH)/make_flashable_recovery.sh
-_825X_VBMETA_STAMP := $(PRODUCT_OUT)/.recovery_oem_vbmeta.stamp
-
-$(_825X_VBMETA_STAMP): $(PRODUCT_OUT)/recovery.img $(_825X_VBMETA_BLOB) $(_825X_VBMETA_TOOL)
-	@echo "----- Adding OEM vbmeta to recovery.img -----"
-	$(hide) $(_825X_VBMETA_TOOL) $(PRODUCT_OUT)/recovery.img $(_825X_VBMETA_BLOB) $(PRODUCT_OUT)/recovery.img
-	$(hide) touch $@
-
-.PHONY: recoveryimage
-recoveryimage: $(_825X_VBMETA_STAMP)
-
-# ---------------------------------------------------------------------------
-# Flashable system image (stock AVB hashtree + vbmeta + footer)
-#
-# build_image.py produces a sparse system.img with no AVB tail; the stock LK
-# rejects that. Rebuild a full-size image with the stock tail appended so it
-# can be flashed directly. Generated as part of every systemimage build.
-# ---------------------------------------------------------------------------
-_825X_SYS_TAIL   := $(_825X_PATH)/prebuilts/system_avb_tail.bin
-_825X_SYS_TOOL   := $(_825X_PATH)/make_flashable_system.py
-_825X_SYS_IMG    := $(PRODUCT_OUT)/system_flashable.img
-_825X_SYS_SPARSE := $(PRODUCT_OUT)/system_flashable_sparse.img
-_825X_SYS_STAMP  := $(PRODUCT_OUT)/.system_avb_tail.stamp
-
-$(_825X_SYS_IMG): $(PRODUCT_OUT)/system.img $(_825X_SYS_TAIL) $(_825X_SYS_TOOL)
-	@echo "----- Adding stock AVB tail to system.img -----"
-	$(hide) python3 $(_825X_SYS_TOOL) $(PRODUCT_OUT)/system.img $(_825X_SYS_TAIL) $@
-
-$(_825X_SYS_SPARSE): $(_825X_SYS_IMG)
-	$(hide) $(HOST_OUT_EXECUTABLES)/img2simg $< $@
-
-$(_825X_SYS_STAMP): $(_825X_SYS_SPARSE)
-	$(hide) touch $@
-
-.PHONY: flashable_systemimage
-flashable_systemimage: $(_825X_SYS_STAMP)
-
-# Make the flashable image part of the normal system/ROM build.
-systemimage: $(_825X_SYS_STAMP)
-droidcore: $(_825X_SYS_STAMP)
-
-# ---------------------------------------------------------------------------
 # Stock vendor SELinux blobs.
 #
 # The generated vendor_file_contexts only covers generic AOSP HAL names, so
@@ -197,34 +155,20 @@ $(PRODUCT_OUT)/vendor.img: SELINUX_FC := $(_825X_FC_BIN)
 $(PRODUCT_OUT)/vendor.img: $(_825X_FC_BIN)
 
 # ---------------------------------------------------------------------------
-# Flashable vendor image (stock AVB hashtree + vbmeta + footer)
+# vbmeta image
 #
-# build_image.py produces a sparse vendor.img with no AVB tail, which the stock
-# LK rejects. Rebuild a full-size image with the stock tail appended so it can
-# be flashed directly. Our debloated content is smaller, but the content
-# region stays at the stock size so the hashtree/vbmeta offsets still match.
+# LK refuses to boot our rebuilt images with an OEM-signed vbmeta, so ship a
+# test-key-signed vbmeta with verification disabled instead. Declaring the
+# standard target makes main.mk include it in droidcore and `m vbmetaimage`.
 # ---------------------------------------------------------------------------
-_825X_VENDOR_TAIL   := $(_825X_PATH)/prebuilts/vendor_avb_tail.bin
-_825X_VENDOR_TOOL   := $(_825X_PATH)/make_flashable_vendor.py
-_825X_VENDOR_IMG    := $(PRODUCT_OUT)/vendor_flashable.img
-_825X_VENDOR_SPARSE := $(PRODUCT_OUT)/vendor_flashable_sparse.img
-_825X_VENDOR_STAMP  := $(PRODUCT_OUT)/.vendor_avb_tail.stamp
+INSTALLED_VBMETAIMAGE_TARGET := $(PRODUCT_OUT)/vbmeta.img
 
-$(_825X_VENDOR_IMG): $(PRODUCT_OUT)/vendor.img $(_825X_VENDOR_TAIL) $(_825X_VENDOR_TOOL)
-	@echo "----- Adding stock AVB tail to vendor.img -----"
-	$(hide) python3 $(_825X_VENDOR_TOOL) $(PRODUCT_OUT)/vendor.img $(_825X_VENDOR_TAIL) $@
-
-$(_825X_VENDOR_SPARSE): $(_825X_VENDOR_IMG)
-	$(hide) $(HOST_OUT_EXECUTABLES)/img2simg $< $@
-
-$(_825X_VENDOR_STAMP): $(_825X_VENDOR_SPARSE)
-	$(hide) touch $@
-
-.PHONY: flashable_vendorimage
-flashable_vendorimage: $(_825X_VENDOR_STAMP)
-
-# Make the flashable image part of the normal vendor/ROM build.
-vendorimage: $(_825X_VENDOR_STAMP)
-droidcore: $(_825X_VENDOR_STAMP)
+$(INSTALLED_VBMETAIMAGE_TARGET): $(AVBTOOL) $(BOARD_AVB_KEY_PATH)
+	@echo "----- Generating test-key vbmeta.img -----"
+	$(hide) python2 $(AVBTOOL) make_vbmeta_image \
+		--algorithm $(BOARD_AVB_ALGORITHM) \
+		--key $(BOARD_AVB_KEY_PATH) \
+		$(BOARD_AVB_MAKE_VBMETA_IMAGE_ARGS) \
+		--output $@
 
 endif
